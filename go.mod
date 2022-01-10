@@ -1,4 +1,4 @@
-module github.com/jtenos/azureblobinfo
+module github.com/jtenos/azureblobinfogo
 
 go 1.17
 

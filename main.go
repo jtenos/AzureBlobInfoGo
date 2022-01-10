@@ -9,7 +9,7 @@ import (
 	"os"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
-	"github.com/jtenos/azureblobinfo/blobs"
+	"github.com/jtenos/azureblobinfogo/blobs"
 	"gopkg.in/yaml.v2"
 )
 
