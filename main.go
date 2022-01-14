@@ -17,65 +17,53 @@ var cfg = &Config{}
 
 func main() {
 
-	loadConfig()
+	if !loadConfig("config.yaml") {
+		if !loadConfig("secrets.yaml") {
+			log.Fatalln("Error loading configuration - must be in config.yaml or secrets.yaml")
+		}
+	}
 
 	w, err := os.Create("blobs.csv")
 	if err != nil {
 		log.Fatalln(err)
 	}
 
+	wbas, err := os.Create("blobs-basic.csv")
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	cw := csv.NewWriter(w)
-	// writeCSVHeader(cw)
-	// records := []blobs.BlobCsvRecord{
-	// 	{
-	// 		Name:         "the name",
-	// 		StorageClass: "the class",
-	// 		Size:         2134,
-	// 		UploadDate:   time.Now(),
-	// 	},
-	// 	{
-	// 		Name:         "another, the name",
-	// 		StorageClass: "another\nclass",
-	// 		Size:         3456,
-	// 		UploadDate:   time.Now(),
-	// 	},
-	// }
-	// for _, record := range records {
-	// 	writeCSV(cw, &record)
-	// }
-	showAllBlobs(cw)
+	cwbas := csv.NewWriter(wbas)
+	writeAllBlobs(cw, cwbas)
 }
 
-func loadConfig() {
-	file, err := os.Open("config.yaml")
+func loadConfig(filenm string) bool {
+	file, err := os.Open(filenm)
 	if file != nil {
 		defer file.Close()
 	}
 
 	if err != nil {
-		log.Fatalf("Error opening config file: %v\n", err)
+		log.Println(err)
+		return false
 	}
 
 	contents, err := ioutil.ReadAll(file)
 	if err != nil {
-		log.Fatalf("Error reading config file: %v\n", err)
+		log.Println(err)
+		return false
 	}
 
 	err = yaml.Unmarshal(contents, &cfg)
 	if err != nil {
-		log.Fatalf("Error unmarshalling config file: %v\n", err)
+		log.Println(err)
+		return false
 	}
+	return true
 }
 
-func writeCSVHeader(cw *csv.Writer) {
-	cw.Write(blobs.HeaderFields)
-}
-
-func writeCSV(cw *csv.Writer, record *blobs.BlobCsvRecord) {
-	cw.Write(record.GetFields())
-}
-
-func showAllBlobs(cw *csv.Writer) {
+func writeAllBlobs(cw *csv.Writer, cwbas *csv.Writer) {
 	cred, err := azblob.NewSharedKeyCredential(cfg.AccountName, cfg.AccountKey)
 	if err != nil {
 		log.Fatalf("Error creating credential: %v\n", err)
@@ -90,7 +78,8 @@ func showAllBlobs(cw *csv.Writer) {
 
 	pager := container.ListBlobsFlat(nil)
 
-	writeCSVHeader(cw)
+	cw.Write(blobs.HeaderFields)
+	cwbas.Write(blobs.BasicHeaderFields)
 	ctx := context.Background()
 
 	for {
@@ -117,10 +106,12 @@ func showAllBlobs(cw *csv.Writer) {
 				Size:         *v.Properties.ContentLength,
 				UploadDate:   *v.Properties.CreationTime,
 			}
-			writeCSV(cw, &rec)
+			cw.Write(rec.GetFields())
+			cwbas.Write(rec.GetBasicFields())
 		}
 		fmt.Println("Loop complete, flushing")
 		cw.Flush()
+		cwbas.Flush()
 		fmt.Println("Done flushing")
 	}
 }

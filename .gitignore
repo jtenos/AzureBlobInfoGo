@@ -1,2 +1,5 @@
 blobs.csv
 config.yaml
+secrets.yaml
+.DS_Store
+blobs-basic.csv

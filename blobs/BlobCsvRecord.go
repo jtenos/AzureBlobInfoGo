@@ -20,3 +20,10 @@ func (r *BlobCsvRecord) GetFields() []string {
 		r.UploadDate.Format("2006-01-02 15:04:05"),
 	}
 }
+
+func (r *BlobCsvRecord) GetBasicFields() []string {
+	return []string{
+		r.Name,
+		strconv.FormatInt(r.Size, 10),
+	}
+}
